@@ -16,7 +16,7 @@ COPY poetry.lock pyproject.toml /code/
 RUN pip install "poetry==$POETRY_VERSION"
 RUN poetry install --no-root
 
-COPY .. /code/
+COPY . /code/
 
 EXPOSE 8000
 
