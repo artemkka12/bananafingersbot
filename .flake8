@@ -1,0 +1,10 @@
+[flake8]
+max-line-length = 120
+exclude =
+    venv,
+    */__init__.py,
+
+ignore:
+    # incompatible with black:
+    W503,
+    E203,
