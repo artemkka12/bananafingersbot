@@ -16,7 +16,7 @@ def get_categories() -> dict:
     soup = BeautifulSoup(response.text, "html.parser")
 
     for category in soup.find_all("li", class_="level-top"):
-        category_name = category.find("a").text.strip().lower()
+        category_name = category.find("a").text.strip()
         category_link = category.find("a")["href"]
         categories[category_name] = category_link
 

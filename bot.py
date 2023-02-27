@@ -90,10 +90,16 @@ def handle_products_pagination(call: CallbackQuery) -> None:
 
 
 def handle_category_choice(message: Message) -> None:
+    category_choice = message.text
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
-        f"User {message.from_user.username}, Message: {message.text}, function: handle_category_choice"
+        f"User {message.from_user.username}, Message: {category_choice}, function: handle_category_choice"
     )
+    if category_choice not in get_categories().keys():
+        bot.send_message(chat_id=message.chat.id, text="Please select a valid category.")
+        bot.register_next_step_handler(message, handle_categories)
+        return
+
     bot.send_message(chat_id=message.chat.id, text="Please enter the minimum sale.")
     bot.register_next_step_handler(message, handle_min_sale, message.text)
 
@@ -105,28 +111,38 @@ def handle_min_sale(message: Message, category_choice) -> None:
         bot.register_next_step_handler(message, handle_min_sale, category_choice)
         return
     bot.send_message(chat_id=message.chat.id, text="Please enter the minimum and maximum price. Example: 10 100")
-    bot.register_next_step_handler(message, handle_pagination, category_choice, min_sale)
+    bot.register_next_step_handler(message, handle_price_range, category_choice, min_sale)
 
 
-# noinspection DuplicatedCode
-def handle_pagination(message: Message, category_choice: str, min_sale: int) -> None:
-    logging.info(
-        f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
-        f"User {message.from_user.username}, Message: {message.text}, function: handle_pagination"
-    )
-
-    min_price, max_price = message.text.split()
-    min_price = int(min_price) if min_price.isdigit() else None
-    max_price = int(max_price) if max_price.isdigit() else None
+def handle_price_range(message: Message, category_choice: str, min_sale: int) -> None:
+    try:
+        min_price, max_price = message.text.split()
+        min_price = int(min_price) if min_price.isdigit() else None
+        max_price = int(max_price) if max_price.isdigit() else None
+    except ValueError:
+        bot.send_message(chat_id=message.chat.id, text="Please enter a valid price range.")
+        bot.register_next_step_handler(message, handle_price_range, category_choice, min_sale)
+        return
 
     if min_price is None or max_price is None or min_price > max_price or min_price < 0 or max_price < 0:
         bot.send_message(chat_id=message.chat.id, text="Please enter a valid price range.")
-        bot.register_next_step_handler(message, handle_pagination, category_choice, min_sale)
+        bot.register_next_step_handler(message, handle_price_range, category_choice, min_sale)
         return
+
+    show_products(message, category_choice, min_sale, min_price, max_price)
+
+
+# noinspection DuplicatedCode
+def show_products(message: Message, category_choice: str, min_sale: int, min_price: int, max_price: int) -> None:
+    logging.info(
+        f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
+        f"User {message.from_user.username}, Message: {message.text}, function: show_products"
+    )
 
     bot.send_message(
         chat_id=message.chat.id,
-        text=f"Category: {category_choice}.\nMinimum sale: {min_sale}%\nStarted to search products.",
+        text=f"Category: {category_choice}.\nMinimum sale: {min_sale}%\n"
+        f"Price range: £{min_price} - £{max_price}\nStarted to search products.",
         reply_markup=ReplyKeyboardRemove(),
     )
 
