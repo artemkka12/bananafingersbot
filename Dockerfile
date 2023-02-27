@@ -20,4 +20,4 @@ COPY . /code/
 
 EXPOSE 8000
 
-CMD ["bash", "./startup.sh"]
+CMD ["python", "bot.py"]

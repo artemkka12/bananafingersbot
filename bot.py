@@ -1,37 +1,34 @@
 import json
 import logging
-import os
 from datetime import datetime
+from pathlib import Path
 
 import telebot
-from dotenv import load_dotenv
 from telebot.types import (
     BotCommand,
+    CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     KeyboardButton,
+    Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
 )
 
+import settings
 from helpers import get_categories, get_products
 
-load_dotenv()
 logging.basicConfig(filename="bot.log", level=logging.INFO)
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-PRODUCTS_PER_PAGE = 5
-
-bot = telebot.TeleBot(BOT_TOKEN)
-
+bot = telebot.TeleBot(settings.BOT_TOKEN)
 bot.set_my_commands([BotCommand("start", "Start the bot"), BotCommand("categories", "Select a category")])
 
 
 @bot.message_handler(commands=["start"])
-def handle_start(message):
+def handle_start(message: Message) -> None:
     logging.info(
-        f"Chat id = {message.chat.id}, time = {datetime.now()}, username = {message.from_user.username}, "
-        f"function = handle_start, data = {message.text}"
+        f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
+        f"User {message.from_user.username}, Message: {message.text}, function: handle_start"
     )
     text = "Hello! I'm a bot that will help you find the best deals on climbing gear. "
     text += "Type /categories to select a category."
@@ -39,14 +36,14 @@ def handle_start(message):
 
 
 @bot.message_handler(commands=["categories"])
-def handle_categories(message):
+def handle_categories(message: Message) -> None:
     logging.info(
-        f"Chat id = {message.chat.id}, time = {datetime.now()}, username = {message.from_user.username}, "
-        f"function = handle_categories, data = {message.text}"
+        f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
+        f"User {message.from_user.username}, Message: {message.text}, function: handle_categories"
     )
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 
-    for category in get_categories(chat_id=message.chat.id):
+    for category in get_categories():
         keyboard.add(KeyboardButton(category))
 
     bot.send_message(chat_id=message.chat.id, text="Please select a category", reply_markup=keyboard)
@@ -55,27 +52,30 @@ def handle_categories(message):
 
 # noinspection DuplicatedCode
 @bot.callback_query_handler(func=lambda call: call.data.startswith("products"))
-def handle_products_pagination(call):
+def handle_products_pagination(call: CallbackQuery) -> None:
     logging.info(
-        f"Chat id = {call.message.chat.id}, time = {datetime.now()}, username = {call.message.from_user.username}, "
-        f"function = handle_products_pagination, data = {call.data}"
+        f"Date: {datetime.now()}, Chat id: {call.message.chat.id}, "
+        f"User {call.message.from_user.username}, Message: {call.message.text}, function: handle_products_pagination"
     )
     page_number = int(call.data.split("-")[1])
-    start_index = (page_number - 1) * PRODUCTS_PER_PAGE
-    end_index = start_index + PRODUCTS_PER_PAGE
+    start_index = (page_number - 1) * settings.PRODUCTS_PER_PAGE
+    end_index = start_index + settings.PRODUCTS_PER_PAGE
 
-    with open(f"products/products_{call.message.chat.id}.json", "r") as f:
+    file_path = Path(settings.MEDIA_PATH).joinpath(f"{call.message.chat.id}.json").as_posix()
+
+    with open(file_path, "r") as f:
         products = json.load(f)
 
     page_products = products[start_index:end_index]
 
     products_message = [
-        f"{product['link']}\nPrice: £{product['current_price']}\nOld price: £{product['old_price']}\n"
-        f"Sale: {product['sale']}%\n"
+        f"{product['link']}\nPrice: £{product['current_price']}\n"
+        f"Old price: £{product['old_price']}\nSale: {product['sale']}%\n"
         for product in page_products
     ]
 
     inline_keyboard = InlineKeyboardMarkup(row_width=3)
+
     if page_number > 1:
         inline_keyboard.add(InlineKeyboardButton("<< Prev", callback_data=f"products-{page_number - 1}"))
     if end_index < len(products):
@@ -89,23 +89,20 @@ def handle_products_pagination(call):
     )
 
 
-def handle_category_choice(message):
+def handle_category_choice(message: Message) -> None:
     logging.info(
-        f"Chat id = {message.chat.id}, time = {datetime.now()}, username = {message.from_user.username}, "
-        f"function = handle_category_choice, data = {message.text}"
+        f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
+        f"User {message.from_user.username}, Message: {message.text}, function: handle_category_choice"
     )
-    category_choice = message.text
-    bot.send_message(
-        chat_id=message.chat.id, text=f"You have selected {category_choice}. Please enter the minimum sale."
-    )
-    bot.register_next_step_handler(message, handle_pagination, category_choice)
+    bot.send_message(chat_id=message.chat.id, text="Please enter the minimum sale.")
+    bot.register_next_step_handler(message, handle_pagination, message.text)
 
 
 # noinspection DuplicatedCode
-def handle_pagination(message, category_choice):
+def handle_pagination(message: Message, category_choice: str) -> None:
     logging.info(
-        f"Chat id = {message.chat.id}, time = {datetime.now()}, username = {message.from_user.username}, "
-        f"function = handle_pagination, data = {message.text}"
+        f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
+        f"User {message.from_user.username}, Message: {message.text}, function: handle_pagination"
     )
     min_sale = int(message.text) if message.text.isdigit() else None
 
@@ -116,12 +113,12 @@ def handle_pagination(message, category_choice):
 
     bot.send_message(
         chat_id=message.chat.id,
-        text=f"Minimum sale: {min_sale}%\nStarted to search products.",
+        text=f"Category: {category_choice}.\nMinimum sale: {min_sale}%\nStarted to search products.",
         reply_markup=ReplyKeyboardRemove(),
     )
 
-    category_link = get_categories(chat_id=message.chat.id)[category_choice]
-    products = get_products(category_link, min_sale, message.chat.id)
+    category_link = get_categories().get(category_choice)
+    products = get_products(category_link, min_sale)
 
     if not products:
         bot.send_message(chat_id=message.chat.id, text="No products found.")
@@ -129,22 +126,23 @@ def handle_pagination(message, category_choice):
 
     products = sorted(products, key=lambda x: x["sale"], reverse=True)
 
-    with open(f"products/products_{message.chat.id}.json", "w") as f:
+    file_path = Path(settings.MEDIA_PATH).joinpath(f"{message.chat.id}.json").as_posix()
+
+    with open(file_path, "w") as f:
         json.dump(products, f, indent=4)
 
-    product_strings = []
-    for product in products:
-        product_strings.append(
+    page_number = int(message.text.split()[1]) if len(message.text.split()) > 1 else 1
+    start_index = (page_number - 1) * settings.PRODUCTS_PER_PAGE
+    end_index = start_index + settings.PRODUCTS_PER_PAGE
+
+    products_message = []
+
+    for product in products[start_index:end_index]:
+        products_message.append(
             f"{product['link']}\nPrice: £{product['current_price']}\n"
             f"Old price: £{product['old_price']}\nSale : {product['sale']}%\n"
         )
 
-    page_number = int(message.text.split()[1]) if len(message.text.split()) > 1 else 1
-
-    start_index = (page_number - 1) * PRODUCTS_PER_PAGE
-    end_index = start_index + PRODUCTS_PER_PAGE
-
-    products_message = "\n".join(product_strings[start_index:end_index])
     inline_keyboard = InlineKeyboardMarkup(row_width=3)
 
     if page_number > 1:
@@ -152,9 +150,9 @@ def handle_pagination(message, category_choice):
     if end_index < len(products):
         inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data=f"products-{page_number + 1}"))
 
-    bot.send_message(chat_id=message.chat.id, text=products_message, reply_markup=inline_keyboard)
+    bot.send_message(chat_id=message.chat.id, text="\n".join(products_message), reply_markup=inline_keyboard)
 
 
 if __name__ == "__main__":
-    logging.info(f"Bot started - {datetime.now()}")
+    logging.info(f"Date: {datetime.now()}, Bot started")
     bot.infinity_polling()

@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 from itertools import count
 
 import requests
@@ -8,8 +7,7 @@ from bs4 import BeautifulSoup
 logging.basicConfig(filename="bot.log", level=logging.INFO)
 
 
-def get_categories(chat_id: int) -> dict:
-    logging.info(f"Chat id = {chat_id}, time = {datetime.now()}, function = get_categories")
+def get_categories() -> dict:
     categories = {}
 
     response = requests.get("https://bananafingers.co.uk/")
@@ -25,23 +23,26 @@ def get_categories(chat_id: int) -> dict:
     return categories
 
 
-def get_products(category_link: str, min_sale: int, chat_id: int) -> list:
+def get_products(category_link: str, min_sale: int) -> list:
     products = []
 
     for i in count(1):
         response = requests.get(category_link + f"?p={i - 1}")
         response.raise_for_status()
-        logging.info(f"Chat id = {chat_id}, time = {datetime.now()}, page {i} loaded")
 
-        if "t find products matching the selection." in str(response.text):
-            logging.info(f"Chat id = {chat_id}, time = {datetime.now()}, no more products")
+        if "t find products matching the selection." in response.text:
             break
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        for product in soup.find_all("div", class_="product details product-item-details"):
+        for product in soup.find_all("li", class_="item product product-item"):
             product_link = product.find("a", class_="product-item-link")["href"]
 
+            try:
+                if product.find("div", class_="stock unavailable").text:
+                    continue
+            except AttributeError:
+                pass
             try:
                 product_current_price = float(product.find("span", class_="price").text[1:])
             except AttributeError:
