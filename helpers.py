@@ -23,7 +23,7 @@ def get_categories() -> dict:
     return categories
 
 
-def get_products(category_link: str, min_sale: int) -> list:
+def get_products(category_link: str, min_sale: int, min_price: int, max_price: int) -> list:
     products = []
 
     for i in count(1):
@@ -54,7 +54,7 @@ def get_products(category_link: str, min_sale: int) -> list:
 
             if all([product_link, product_current_price, product_old_price]):
                 sale = ((product_old_price - product_current_price) / product_old_price) * 100
-                if sale >= min_sale:
+                if sale >= min_sale and min_price <= product_current_price <= max_price:
                     products.append(
                         {
                             "link": product_link,
