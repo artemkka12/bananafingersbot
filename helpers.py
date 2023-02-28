@@ -23,7 +23,7 @@ def get_categories() -> dict:
     return categories
 
 
-def get_products(category_link: str, min_sale: int, min_price: int, max_price: int) -> list:
+def get_products(category_link: str, min_sale: int, min_price: int = None, max_price: int = None) -> list:
     products = []
 
     for i in count(1):
@@ -63,5 +63,16 @@ def get_products(category_link: str, min_sale: int, min_price: int, max_price: i
                             "sale": round(sale),
                         }
                     )
+
+    return products
+
+
+def get_products_with_big_sale():
+    categories = get_categories()
+
+    products = []
+
+    for category_name, category_link in categories.items():
+        products.extend(get_products(category_link, 50, 10, 100))
 
     return products
