@@ -68,11 +68,12 @@ def get_products(category_link: str, min_sale: int, min_price: int = None, max_p
 
 
 def get_products_with_big_sale():
-    categories = get_categories()
+    # categories = get_categories()
+    categories = {"Carabiners": "https://bananafingers.co.uk/carabiners"}
 
     products = []
 
     for category_name, category_link in categories.items():
-        products.extend(get_products(category_link, 50, 10, 100))
+        products.extend(get_products(category_link, 5, 1, 100))
 
     return products

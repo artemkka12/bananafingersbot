@@ -4,7 +4,6 @@ from pathlib import Path
 from celery import Celery
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-import database
 import helpers
 import settings
 from bot import bot
@@ -12,19 +11,22 @@ from bot import bot
 app = Celery("tasks", broker=settings.CELERY_BROKER_URL)
 
 
+# noinspection DuplicatedCode
 @app.task
 def send_daily_notification():
-    chats = database.get_all_chats()
+    chats = [711073539]
     products = helpers.get_products_with_big_sale()
-    print("Products: ", products)
+    print("Products:")
     if not products:
         print("No products with big sale")
         return
 
     products = sorted(products, key=lambda x: x["sale"], reverse=True)
-
+    print(chats)
     for chat_id in chats:
-        file_path = Path(settings.MEDIA_PATH).joinpath(f"{chat_id}.json").as_posix()
+        print(chat_id)
+        bot.send_message(chat_id=chat_id, text="Daily notification:")
+        file_path = Path(settings.MEDIA_PATH).joinpath(f"notifications_{chat_id}.json").as_posix()
         with open(file_path, "w") as f:
             json.dump(products, f, indent=4)
 
@@ -37,14 +39,15 @@ def send_daily_notification():
         )
 
         inline_keyboard = InlineKeyboardMarkup(row_width=3)
-        inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-2"))
-
+        inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-notification-2"))
+        bot.send_message(chat_id=chat_id, text="Daily notification:")
         bot.send_message(chat_id=chat_id, text=products_message, reply_markup=inline_keyboard)
 
 
 app.conf.beat_schedule = {
     "send-daily-notification": {
         "task": "tasks.send_daily_notification",
-        "schedule": 60.0 * 60.0 * 24.0,
+        # "schedule": 60.0 * 60.0 * 24.0,
+        "schedule": 24.0,
     },
 }

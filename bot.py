@@ -15,7 +15,7 @@ from telebot.types import (
     ReplyKeyboardRemove,
 )
 
-import database as db
+# import database as db
 import helpers
 import settings
 
@@ -33,26 +33,24 @@ bot.set_my_commands(
 
 
 @bot.message_handler(commands=["start"])
-def handle_start(message: Message) -> None:
-    """Start the bot"""
+def start(message: Message) -> None:
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
-        f"User {message.from_user.username}, Message: {message.text}, function: handle_start"
+        f"User {message.from_user.username}, Message: {message.text}, function: start"
     )
 
     text = "Hello! I'm a bot that will help you find the best deals on climbing gear. "
     text += "Type /categories to select a category."
 
-    db.create_user(message.chat.id, message.from_user.username, False)
+    # db.create_user(message.chat.id, message.from_user.username, False)
     bot.send_message(message.chat.id, text)
 
 
 @bot.message_handler(commands=["categories"])
-def handle_categories(message: Message) -> None:
-    """Select a category"""
+def categories(message: Message) -> None:
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
-        f"User {message.from_user.username}, Message: {message.text}, function: handle_categories"
+        f"User {message.from_user.username}, Message: {message.text}, function: categories"
     )
 
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -65,43 +63,48 @@ def handle_categories(message: Message) -> None:
 
 
 @bot.message_handler(commands=["subscribe"])
-def handle_subscribe(message: Message) -> None:
-    """Subscribe to daily notifications"""
+def subscribe(message: Message) -> None:
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
-        f"User {message.from_user.username}, Message: {message.text}, function: handle_subscribe"
+        f"User {message.from_user.username}, Message: {message.text}, function: subscribe"
     )
 
-    db.update_user(message.chat.id, message.from_user.username, True)
+    # db.update_or_create_user(message.chat.id, message.from_user.username, True)
     bot.send_message(chat_id=message.chat.id, text="You have been subscribed to daily notifications.")
 
 
 @bot.message_handler(commands=["unsubscribe"])
-def handle_unsubscribe(message: Message) -> None:
-    """Unsubscribe from daily notifications"""
+def unsubscribe(message: Message) -> None:
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
-        f"User {message.from_user.username}, Message: {message.text}, function: handle_unsubscribe"
+        f"User {message.from_user.username}, Message: {message.text}, function: unsubscribe"
     )
 
-    db.update_user(message.chat.id, message.from_user.username, False)
+    # db.update_or_create_user(message.chat.id, message.from_user.username, False)
     bot.send_message(chat_id=message.chat.id, text="You have been unsubscribed from daily notifications.")
+
+
+@bot.message_handler(commands=["status"])
+def status(message: Message) -> None:
+    # is_subscribed = db.get_user(message.chat.id)
+    bot.send_message(chat_id=message.chat.id, text="Subscribed:")
 
 
 # noinspection DuplicatedCode
 @bot.callback_query_handler(func=lambda call: call.data.startswith("products"))
 def handle_products_pagination(call: CallbackQuery) -> None:
-    """Handle products pagination"""
     logging.info(
         f"Date: {datetime.now()}, Chat id: {call.message.chat.id}, "
         f"User {call.message.from_user.username}, Message: {call.message.text}, function: handle_products_pagination"
     )
 
-    page_number = int(call.data.split("-")[1])
+    page_number = int(call.data.split("-")[-1])
     start_index = (page_number - 1) * settings.PRODUCTS_PER_PAGE
     end_index = start_index + settings.PRODUCTS_PER_PAGE
 
-    file_path = Path(settings.MEDIA_PATH).joinpath(f"{call.message.chat.id}.json").as_posix()
+    is_notification = "notification" in call.data
+
+    file_path = Path(settings.MEDIA_PATH, f"{'notifications_' * is_notification}{call.message.chat.id}.json").as_posix()
 
     with open(file_path, "r") as f:
         products = json.load(f)
@@ -117,9 +120,17 @@ def handle_products_pagination(call: CallbackQuery) -> None:
     inline_keyboard = InlineKeyboardMarkup(row_width=3)
 
     if page_number > 1:
-        inline_keyboard.add(InlineKeyboardButton("<< Prev", callback_data=f"products-{page_number - 1}"))
+        inline_keyboard.add(
+            InlineKeyboardButton(
+                "<< Prev", callback_data=f"products{'-notification' * is_notification}-{page_number - 1}"
+            )
+        )
     if end_index < len(products):
-        inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data=f"products-{page_number + 1}"))
+        inline_keyboard.add(
+            InlineKeyboardButton(
+                "Next >>", callback_data=f"products{'-notification' * is_notification}-{page_number + 1}"
+            )
+        )
 
     bot.edit_message_text(
         chat_id=call.message.chat.id,
@@ -130,7 +141,6 @@ def handle_products_pagination(call: CallbackQuery) -> None:
 
 
 def handle_category_choice(message: Message) -> None:
-    """Handle category choice"""
     category_choice = message.text
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
@@ -139,7 +149,7 @@ def handle_category_choice(message: Message) -> None:
 
     if category_choice not in helpers.get_categories().keys():
         bot.send_message(chat_id=message.chat.id, text="Please select a valid category.")
-        bot.register_next_step_handler(message, handle_categories)
+        bot.register_next_step_handler(message, categories)
         return
 
     bot.send_message(chat_id=message.chat.id, text="Please enter the minimum sale.")
@@ -147,7 +157,6 @@ def handle_category_choice(message: Message) -> None:
 
 
 def handle_min_sale(message: Message, category_choice) -> None:
-    """Handle minimum sale"""
     min_sale = int(message.text) if message.text.isdigit() else None
 
     if min_sale is None or not 0 <= min_sale <= 100:
@@ -160,7 +169,6 @@ def handle_min_sale(message: Message, category_choice) -> None:
 
 
 def handle_price_range(message: Message, category_choice: str, min_sale: int) -> None:
-    """Handle price range"""
     try:
         min_price, max_price = message.text.split()
         min_price = int(min_price) if min_price.isdigit() else None
@@ -180,7 +188,6 @@ def handle_price_range(message: Message, category_choice: str, min_sale: int) ->
 
 # noinspection DuplicatedCode
 def show_products(message: Message, category_choice: str, min_sale: int, min_price: int, max_price: int) -> None:
-    """Show products"""
     logging.info(
         f"Date: {datetime.now()}, Chat id: {message.chat.id}, "
         f"User {message.from_user.username}, Message: {message.text}, function: show_products"
@@ -216,7 +223,8 @@ def show_products(message: Message, category_choice: str, min_sale: int, min_pri
     )
 
     inline_keyboard = InlineKeyboardMarkup(row_width=3)
-    inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-2"))
+    if len(products) > settings.PRODUCTS_PER_PAGE:
+        inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-page-2"))
 
     bot.send_message(chat_id=message.chat.id, text=products_message, reply_markup=inline_keyboard)
 
