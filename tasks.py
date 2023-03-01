@@ -2,32 +2,30 @@ import json
 from pathlib import Path
 
 from celery import Celery
+from celery.schedules import crontab
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-import helpers
 import settings
 from bot import bot
-from database import get_all_chats
+from database import get_subscribed_users
+from helpers import products_on_big_sale
 
-app = Celery("tasks", broker=settings.CELERY_BROKER_URL)
+app = Celery("tasks", broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_BROKER_URL)
 
 
 # noinspection DuplicatedCode
 @app.task
 def send_daily_notification():
-    chats = get_all_chats()
-    products = helpers.get_products_with_big_sale()
-    print("Products:")
+    subscribed_users = get_subscribed_users()
+    products = products_on_big_sale()
+
     if not products:
-        print("No products with big sale")
         return
 
     products = sorted(products, key=lambda x: x["sale"], reverse=True)
-    print(chats)
-    for chat_id in chats:
-        print(chat_id)
-        bot.send_message(chat_id=chat_id, text="Daily notification:")
-        file_path = Path(settings.MEDIA_PATH).joinpath(f"notifications_{chat_id}.json").as_posix()
+    for user in subscribed_users:
+        file_path = Path(settings.MEDIA_PATH).joinpath(f"notification_{user['chat_id']}.json").as_posix()
+
         with open(file_path, "w") as f:
             json.dump(products, f, indent=4)
 
@@ -41,14 +39,14 @@ def send_daily_notification():
 
         inline_keyboard = InlineKeyboardMarkup(row_width=3)
         inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-notification-2"))
-        bot.send_message(chat_id=chat_id, text="Daily notification:")
-        bot.send_message(chat_id=chat_id, text=products_message, reply_markup=inline_keyboard)
+
+        bot.send_message(chat_id=user["chat_id"], text="Daily notification:")
+        bot.send_message(chat_id=user["chat_id"], text=products_message, reply_markup=inline_keyboard)
 
 
 app.conf.beat_schedule = {
     "send-daily-notification": {
         "task": "tasks.send_daily_notification",
-        # "schedule": 60.0 * 60.0 * 24.0,
-        "schedule": 24.0,
+        "schedule": crontab(hour=12, minute=0),
     },
 }

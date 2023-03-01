@@ -44,22 +44,22 @@ def get_products(category_link: str, min_sale: int, min_price: int = None, max_p
             except AttributeError:
                 pass
             try:
-                product_current_price = float(product.find("span", class_="price").text[1:])
+                current_price = float(product.find("span", class_="price").text[1:])
             except AttributeError:
-                product_current_price = None
+                current_price = None
             try:
-                product_old_price = float(product.find("span", class_="old-price").text.strip()[1:])
+                old_price = float(product.find("span", class_="old-price").text.strip()[1:])
             except AttributeError:
-                product_old_price = None
+                old_price = None
 
-            if all([product_link, product_current_price, product_old_price]):
-                sale = ((product_old_price - product_current_price) / product_old_price) * 100
-                if sale >= min_sale and min_price <= product_current_price <= max_price:
+            if all([product_link, current_price, old_price]):
+                sale = ((old_price - current_price) / old_price) * 100
+                if sale >= min_sale and (all([min_price, max_price]) and min_price <= current_price <= max_price):
                     products.append(
                         {
                             "link": product_link,
-                            "current_price": product_current_price,
-                            "old_price": product_old_price,
+                            "current_price": current_price,
+                            "old_price": old_price,
                             "sale": round(sale),
                         }
                     )
@@ -67,13 +67,12 @@ def get_products(category_link: str, min_sale: int, min_price: int = None, max_p
     return products
 
 
-def get_products_with_big_sale():
-    # categories = get_categories()
-    categories = {"Carabiners": "https://bananafingers.co.uk/carabiners"}
+def products_on_big_sale() -> list:
+    categories = get_categories()
 
     products = []
 
     for category_name, category_link in categories.items():
-        products.extend(get_products(category_link, 5, 1, 100))
+        products.extend(get_products(category_link, 50))
 
     return products

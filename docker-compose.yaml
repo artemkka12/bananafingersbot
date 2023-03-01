@@ -9,16 +9,15 @@ services:
       - products_volume:/code/products
     env_file:
       - .env
-    restart: always
-    depends_on:
-      - mongo
+    restart: unless-stopped
+
 
   redis:
     container_name: redis
     image: redis:6.2.5
-    restart: unless-stopped
     ports:
       - "6379:6379"
+    restart: unless-stopped
 
   celery-beat:
     container_name: celery-beat

@@ -2,8 +2,8 @@ from pymongo import MongoClient
 
 import settings
 
-cluster = MongoClient(settings.MONGOENGINE_LINK)
-db = cluster[settings.MONGOENGINE_DATABASE]
+client = MongoClient(settings.MONGOENGINE_LINK)
+db = client[settings.MONGOENGINE_DATABASE]
 collection = db[settings.MONGOENGINE_COLLECTION]
 
 
@@ -19,8 +19,8 @@ def update_user(chat_id: int, username: str, is_subscribed: bool) -> None:
     collection.update_one({"chat_id": chat_id}, {"$set": {"username": username, "is_subscribed": is_subscribed}})
 
 
-def get_all_chats() -> list:
-    return [user["chat_id"] for user in collection.find()]
+def get_subscribed_users() -> list:
+    return [user for user in collection.find({"is_subscribed": True})]
 
 
 def update_or_create_user(chat_id: int, username: str, is_subscribed: bool) -> None:
