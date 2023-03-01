@@ -8,6 +8,8 @@ You select category and the minimum sale percentage and the bot will send you a 
 
 1. Python 3.10
 2. Docker
+3. MongoDB
+4. Redis
 
 ### Setup
 
@@ -19,7 +21,14 @@ You select category and the minimum sale percentage and the bot will send you a 
 ### 🔧 .env
 
 ```python
-BOT_TOKEN =
+BOT_TOKEN=
+
+CELERY_BROKER_URL=
+
+MONGOENGINE_LINK=
+
+MONGOENGINE_DATABASE=
+MONGOENGINE_COLLECTION=
 ```
 
 ### 🚀 Run
