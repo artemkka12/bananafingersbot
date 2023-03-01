@@ -15,7 +15,7 @@ from telebot.types import (
     ReplyKeyboardRemove,
 )
 
-# import database as db
+import database as db
 import helpers
 import settings
 
@@ -26,7 +26,7 @@ bot.set_my_commands(
     [
         BotCommand("start", "Start the bot"),
         BotCommand("categories", "Select a category"),
-        BotCommand("subscribe", "Subscribe to daily notifications about high sales"),
+        BotCommand("subscribe", "Subscribe to daily notifications about high sales (more than 50%)"),
         BotCommand("unsubscribe", "Unsubscribe from daily notifications about high sales"),
     ]
 )
@@ -42,7 +42,7 @@ def start(message: Message) -> None:
     text = "Hello! I'm a bot that will help you find the best deals on climbing gear. "
     text += "Type /categories to select a category."
 
-    # db.create_user(message.chat.id, message.from_user.username, False)
+    db.create_user(message.chat.id, message.from_user.username, False)
     bot.send_message(message.chat.id, text)
 
 
@@ -69,7 +69,7 @@ def subscribe(message: Message) -> None:
         f"User {message.from_user.username}, Message: {message.text}, function: subscribe"
     )
 
-    # db.update_or_create_user(message.chat.id, message.from_user.username, True)
+    db.update_or_create_user(message.chat.id, message.from_user.username, True)
     bot.send_message(chat_id=message.chat.id, text="You have been subscribed to daily notifications.")
 
 
@@ -80,14 +80,8 @@ def unsubscribe(message: Message) -> None:
         f"User {message.from_user.username}, Message: {message.text}, function: unsubscribe"
     )
 
-    # db.update_or_create_user(message.chat.id, message.from_user.username, False)
+    db.update_or_create_user(message.chat.id, message.from_user.username, False)
     bot.send_message(chat_id=message.chat.id, text="You have been unsubscribed from daily notifications.")
-
-
-@bot.message_handler(commands=["status"])
-def status(message: Message) -> None:
-    # is_subscribed = db.get_user(message.chat.id)
-    bot.send_message(chat_id=message.chat.id, text="Subscribed:")
 
 
 # noinspection DuplicatedCode

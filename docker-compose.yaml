@@ -1,16 +1,6 @@
 version: "3.10"
 
 services:
-  mongo:
-    container_name: mongo
-    image: mongo:5.0.14
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - ./mongo:/docker-entrypoint-initdb.d
-
   bot:
     container_name: bot
     build: .

@@ -7,6 +7,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 import helpers
 import settings
 from bot import bot
+from database import get_all_chats
 
 app = Celery("tasks", broker=settings.CELERY_BROKER_URL)
 
@@ -14,7 +15,7 @@ app = Celery("tasks", broker=settings.CELERY_BROKER_URL)
 # noinspection DuplicatedCode
 @app.task
 def send_daily_notification():
-    chats = [711073539]
+    chats = get_all_chats()
     products = helpers.get_products_with_big_sale()
     print("Products:")
     if not products:
