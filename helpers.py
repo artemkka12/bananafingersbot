@@ -54,7 +54,11 @@ def get_products(category_link: str, min_sale: int, min_price: int = None, max_p
 
             if all([product_link, current_price, old_price]):
                 sale = ((old_price - current_price) / old_price) * 100
-                if sale >= min_sale and (all([min_price, max_price]) and min_price <= current_price <= max_price):
+                if (
+                    sale >= min_sale
+                    and (not min_price or current_price >= min_price)
+                    and (not max_price or current_price <= max_price)
+                ):
                     products.append(
                         {
                             "link": product_link,
