@@ -13,7 +13,6 @@ repos:
     rev: 21.12b0
     hooks:
       - id: black
-        exclude: ^.*/migrations/.*.py
         additional_dependencies: ['click<=8.0.4']
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1

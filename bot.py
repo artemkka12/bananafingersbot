@@ -210,10 +210,6 @@ def show_products(message: Message, category_choice: str, min_sale: int, min_pri
         return
 
     products = sorted(products, key=lambda x: x["sale"], reverse=True)
-    file_path = Path(settings.MEDIA_PATH, f"{message.chat.id}.json").as_posix()
-
-    with open(file_path, "w") as f:
-        json.dump(products, f, indent=4)
 
     products_message = "\n".join(
         [
@@ -223,12 +219,18 @@ def show_products(message: Message, category_choice: str, min_sale: int, min_pri
         ]
     )
 
-    inline_keyboard = InlineKeyboardMarkup(row_width=3)
-
     if len(products) > settings.PRODUCTS_PER_PAGE:
+        file_path = Path(settings.MEDIA_PATH, f"{message.chat.id}.json").as_posix()
+
+        with open(file_path, "w") as f:
+            json.dump(products, f, indent=4)
+
+        inline_keyboard = InlineKeyboardMarkup(row_width=3)
         inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-page-2"))
 
-    bot.send_message(chat_id=message.chat.id, text=products_message, reply_markup=inline_keyboard)
+        bot.send_message(chat_id=message.chat.id, text=products_message, reply_markup=inline_keyboard)
+    else:
+        bot.send_message(chat_id=message.chat.id, text=products_message)
 
 
 if __name__ == "__main__":

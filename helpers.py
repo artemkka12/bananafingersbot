@@ -29,6 +29,7 @@ def get_products(category_link: str, min_sale: int, min_price: int = None, max_p
     for i in count(1):
         response = requests.get(category_link + f"?p={i - 1}")
         response.raise_for_status()
+        logging.info(f"Getting products from page {i}...")
 
         if "t find products matching the selection." in response.text:
             break
@@ -73,10 +74,10 @@ def get_products(category_link: str, min_sale: int, min_price: int = None, max_p
 
 def products_on_big_sale() -> list:
     categories = get_categories()
-
     products = []
 
     for category_name, category_link in categories.items():
+        logging.info(f"Getting products from {category_name} category...")
         products.extend(get_products(category_link, 50))
 
     return products

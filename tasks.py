@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 from celery import Celery
-from celery.schedules import crontab
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 import settings
@@ -24,11 +23,6 @@ def send_daily_notification():
 
     products = sorted(products, key=lambda x: x["sale"], reverse=True)
     for user in subscribed_users:
-        file_path = Path(settings.MEDIA_PATH).joinpath(f"notification_{user['chat_id']}.json").as_posix()
-
-        with open(file_path, "w") as f:
-            json.dump(products, f, indent=4)
-
         products_message = "\n".join(
             [
                 f"{product['link']}\nPrice: £{product['current_price']}\n"
@@ -37,16 +31,25 @@ def send_daily_notification():
             ]
         )
 
-        inline_keyboard = InlineKeyboardMarkup(row_width=3)
-        inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-notification-2"))
-
         bot.send_message(chat_id=user["chat_id"], text="Daily notification:")
-        bot.send_message(chat_id=user["chat_id"], text=products_message, reply_markup=inline_keyboard)
+
+        if len(products) > settings.PRODUCTS_PER_PAGE:
+            file_path = Path(settings.MEDIA_PATH, f"notification_{user['chat_id']}.json").as_posix()
+
+            with open(file_path, "w") as f:
+                json.dump(products, f, indent=4)
+
+            inline_keyboard = InlineKeyboardMarkup(row_width=3)
+            inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-notification-2"))
+
+            bot.send_message(chat_id=user["chat_id"], text=products_message, reply_markup=inline_keyboard)
+        else:
+            bot.send_message(chat_id=user["chat_id"], text=products_message)
 
 
 app.conf.beat_schedule = {
     "send-daily-notification": {
         "task": "tasks.send_daily_notification",
-        "schedule": crontab(hour=12, minute=0),
+        "schedule": 60 * 60 * 24,
     },
 }
