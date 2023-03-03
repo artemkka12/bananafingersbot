@@ -3,6 +3,7 @@ from itertools import count
 
 import requests
 from bs4 import BeautifulSoup
+from deep_translator import GoogleTranslator
 
 logging.basicConfig(filename="bot.log", level=logging.INFO)
 
@@ -81,3 +82,17 @@ def products_on_big_sale() -> list:
         products.extend(get_products(category_link, 50))
 
     return products
+
+
+def get_products_message(products: list, language: str) -> str:
+    price = GoogleTranslator(source="auto", target=language).translate("Price")
+    old_price = GoogleTranslator(source="auto", target=language).translate("Old price")
+    sale = GoogleTranslator(source="auto", target=language).translate("Sale")
+
+    return "\n".join(
+        [
+            f"{product['link']}\n{price}: £{product['current_price']}\n"
+            f"{old_price}: £{product['old_price']}\n{sale}: {product['sale']}%\n"
+            for product in products
+        ]
+    )

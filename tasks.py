@@ -40,7 +40,7 @@ def send_daily_notification():
                 json.dump(products, f, indent=4)
 
             inline_keyboard = InlineKeyboardMarkup(row_width=3)
-            inline_keyboard.add(InlineKeyboardButton("Next >>", callback_data="products-notification-2"))
+            inline_keyboard.add(InlineKeyboardButton(">>", callback_data="products-notification-2"))
 
             bot.send_message(chat_id=user["chat_id"], text=products_message, reply_markup=inline_keyboard)
         else:

@@ -313,6 +313,26 @@ files = [
 ]
 
 [[package]]
+name = "deep-translator"
+version = "1.10.1"
+description = "A flexible free and unlimited python tool to translate between different languages in a simple way using multiple translators"
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "deep_translator-1.10.1-py3-none-any.whl", hash = "sha256:8581e93c4d33746cd6e662607fefb26c457eae9b197de0648e3f25f324ef6534"},
+    {file = "deep_translator-1.10.1.tar.gz", hash = "sha256:e99438dab70e3bebcda932e3f5e86fd3d32b43f87d66ed9f8b6816db146f1d9f"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.9.1,<5.0.0"
+requests = ">=2.23.0,<3.0.0"
+
+[package.extras]
+docx = ["docx2txt (>=0.8,<0.9)"]
+pdf = ["pypdf (>=3.3.0,<4.0.0)"]
+
+[[package]]
 name = "distlib"
 version = "0.3.6"
 description = "Distribution utilities"
@@ -900,4 +920,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b2badeba7c050ec186111ee317c8e3180e9944415c97f650815177ae277a70d4"
+content-hash = "cdf200fab130a808556d9ca217aaba9aa023178a009d374001d28bffeebc1e0e"
