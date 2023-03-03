@@ -1,7 +1,7 @@
 # 📱 bananafingersbot
 
 This telegram bot will help you find the best deals on climbing gear
-on [bananafingers.co.uk](https://bananafingers.co.uk).
+on [BananaFingers](https://bananafingers.co.uk).
 You select category and the minimum sale percentage and the bot will send you a message with the best deals.
 
 ### 📝 Requirements
